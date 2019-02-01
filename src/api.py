@@ -142,6 +142,7 @@ if __name__ == "__main__":
     parser.add_argument("--https", action="store_true", help="Make the API only serve HTTPS requests")
     parser.add_argument("--ssl-certificate", help="Path to the SSL certificate")
     parser.add_argument("--ssl-key", help="Path to the SSL private key file")
+    parser.add_argument("--db-uri", help="URI to MongoDB daemon")
     args = parser.parse_args()
 
     # validate args
@@ -159,8 +160,11 @@ if __name__ == "__main__":
         logger.info("No courses config file found. Retaining previous DB contents.")
         courses = None
 
+    if args.db_uri is not None:
+        logger.info("Using DB URI " + args.db_uri)
+
     # build the app and start the api server
-    db_object = DatabaseResolver()
+    db_object = DatabaseResolver(db_uri = args.db_uri)
     app = make_app(cluster_token=initialize_cluster_token(), db_resolver=db_object, course_tokens=courses)
     if args.https:
         http_server = tornado.httpserver.HTTPServer(app, ssl_options={"certfile": args.ssl_certificate,

@@ -10,16 +10,17 @@ logger = logging.getLogger()
 
 class DatabaseResolver(object):
 
-    def __init__(self, db_name="AG", logs_db_name="logs"):
-        self.client = MongoClient()
+    def __init__(self, db_name="AG", logs_db_name="logs", db_uri=None):
+        self.client = MongoClient() if db_uri is None else MongoClient(db_uri)
         self.db_name = db_name
         self.logs_db_name = logs_db_name
         self.db = self.client[self.db_name]
         self.logs_db = self.client[self.logs_db_name]
 
-        logger.info("starting up Mongo daemon")
-        os.makedirs(DB_PATH, exist_ok=True)
-        self.mongo_daemon = Popen(["mongod", "--dbpath", DB_PATH], stdout=DEVNULL, stderr=DEVNULL)
+        if db_uri is None:
+            logger.info("starting up Mongo daemon")
+            os.makedirs(DB_PATH, exist_ok=True)
+            self.mongo_daemon = Popen(["mongod", "--dbpath", DB_PATH], stdout=DEVNULL, stderr=DEVNULL)
 
     def get_job_log_collection(self):
         """

@@ -1,5 +1,4 @@
 import json
-import time
 import unittest
 
 import jsonschema
@@ -10,7 +9,7 @@ import src.constants.keys as key
 from src.api import make_app
 from src.config import GRADING_JOB_ENDPOINT, WORKER_REGISTER_ENDPOINT, GRADING_CONFIG_ENDPOINT, GRADING_RUN_ENDPOINT, \
     HEARTBEAT_ENDPOINT
-from src.config import OK_REQUEST_CODE, QUEUE_EMPTY_CODE
+from src.config import OK_REQUEST_CODE
 from src.database import DatabaseResolver
 from src.utilities import get_header
 
@@ -52,8 +51,10 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(set(actual_stage.keys()), set(expected_stage.keys()))
 
         for stage_key in expected_stage:
-            if stage_key == key.ENV or stage_key == key.ENTRY_POINT:
-                self.assertEqual(sorted(actual_stage.get(stage_key)), sorted(expected_stage.get(stage_key)))
+            if stage_key == key.ENV:
+                self.assertTrue(set(expected_stage[key.ENV].keys()).issubset(set(actual_stage[key.ENV].keys())))
+                for env_key in expected_stage.get(stage_key):
+                    self.assertEqual(actual_stage[key.ENV][env_key], expected_stage[key.ENV][env_key])
             else:
                 self.assertEqual(actual_stage.get(stage_key), expected_stage.get(stage_key))
 
@@ -110,7 +111,7 @@ class BaseEndpointTest(BaseTest, AsyncHTTPTestCase):
         self.assertEqual(response.code, OK_REQUEST_CODE)
 
         response_body = json.loads(response.body)
-        return response_body["data"].get(key.STATE)
+        return response_body["data"]
 
     def check_grading_run_status(self, course_id, assignment_name, grading_run_id, header, expected_code,
                                  expected_state=None):

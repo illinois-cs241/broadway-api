@@ -27,7 +27,7 @@ RUN_ID_PARAM = "grading_run_id"
 # these let us specify the stage specs
 IMAGE = "image"
 ENV = "env"
-ENTRY_POINT = "entry_point"
+ENTRY_POINT = "entrypoint"
 NETWORKING = "enable_networking"
 HOST_NAME = "host_name"
 TIMEOUT = "timeout"

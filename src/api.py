@@ -167,7 +167,7 @@ if __name__ == "__main__":
     port = args.port if args.port is not None else PORT
 
     # build the app and start the api server
-    db_object = DatabaseResolver(db_uri = args.db_uri)
+    db_object = DatabaseResolver(db_uri=args.db_uri)
     app = make_app(cluster_token=initialize_cluster_token(), db_resolver=db_object, course_tokens=courses)
     if args.https:
         http_server = tornado.httpserver.HTTPServer(app, ssl_options={"certfile": args.ssl_certificate,

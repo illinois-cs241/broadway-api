@@ -11,4 +11,4 @@ COPY config.py /api
 
 RUN pip3 install -r /api/requirements.txt
 
-ENTRYPOINT [ "python3", "-m", "api" ]
+ENTRYPOINT [ "python3", "api/api.py" ]

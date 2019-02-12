@@ -4,10 +4,12 @@ RUN apk add python3
 
 RUN mkdir /api
 
+COPY broadway_api /api/broadway_api
 COPY requirements.txt /api
-RUN pip3 install -r /api/requirements.txt
+COPY api.py /api
+COPY config.py /api
 
-COPY src /api/src
+RUN pip3 install -r /api/requirements.txt
 
 RUN echo "#! /bin/sh" >> /api/run.sh && \
     echo "cd /api && python3 -m src.api \"\$@\"" >> /api/run.sh && \

@@ -5,6 +5,7 @@ from datetime import datetime
 class WorkerNode:
     def __init__(
         self,
+        worker_id: str,
         hostname: str,
         id_: Optional[str] = None,
         running_job_id: Optional[str] = None,
@@ -13,6 +14,7 @@ class WorkerNode:
         is_alive: bool = True,
     ):
         self.id = id_
+        self.worker_id = worker_id
         self.running_job_id = running_job_id
         self.last_seen = last_seen
         self.hostname = hostname

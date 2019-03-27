@@ -217,31 +217,14 @@ class GradingRunDaoTest(BaseTest):
 
 class WorkerNodeDaoTest(BaseTest):
 
-    DEFAULT_OBJECT = models.WorkerNode(hostname="example.com")
+    DEFAULT_OBJECT = models.WorkerNode(worker_id="holygoply", hostname="example.com")
 
     def setUp(self):
         super().setUp()
         self.dao = daos.WorkerNodeDao(self.app.settings)
 
     def _insert_obj(self):
-        return self.dao.insert(WorkerNodeDaoTest.DEFAULT_OBJECT)
-
-    def test_insert(self):
-        result = self._insert_obj()
-        self.assertIsNotNone(result.inserted_id)
-
-    def test_find_by_id(self):
-        result = self._insert_obj()
-        obj = self.dao.find_by_id(result.inserted_id)
-
-        self.assertIsNotNone(obj)
-        for var in vars(obj):
-            if var == "id":
-                self.assertIsNotNone(obj.id)
-            else:
-                self.assertEqual(
-                    getattr(obj, var), getattr(WorkerNodeDaoTest.DEFAULT_OBJECT, var)
-                )
+        return self.dao.update(WorkerNodeDaoTest.DEFAULT_OBJECT)
 
     def test_find_by_hostname(self):
         self._insert_obj()

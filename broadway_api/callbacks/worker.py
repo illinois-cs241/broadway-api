@@ -35,13 +35,13 @@ def _handle_lost_worker_node(settings, worker):
     if not lost_run_id:
         logger.critical(
             "worker '{}' ({}) went offline unexpectedly".format(
-                worker.hostname, worker.id
+                worker.hostname, worker.worker_id
             )
         )
         return
     logger.critical(
         "worker '{}' ({}) went offline unexpectedly while executing '{}'".format(
-            worker.hostname, worker.id, lost_run_id
+            worker.hostname, worker.worker_id, lost_run_id
         )
     )
 

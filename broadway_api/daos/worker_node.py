@@ -6,6 +6,7 @@ from broadway_api.models import WorkerNode
 
 class WorkerNodeDao(BaseDao):
     ID = "_id"
+    WORKER_ID = "worker_id"
     RUNNING_JOB_ID = "running_job_id"
     LAST_SEEN = "last_seen"
     WORKER_HOSTNAME = "worker_hostname"
@@ -19,11 +20,6 @@ class WorkerNodeDao(BaseDao):
             self._config["DB_PRIMARY"], WorkerNodeDao._COLLECTION
         )
 
-    def insert(self, obj):
-        document = self._to_store(obj)
-        del document[WorkerNodeDao.ID]
-        return self._collection.insert_one(document)
-
     def find_all(self):
         return list(map(self._from_store, self._collection.find()))
 
@@ -32,6 +28,11 @@ class WorkerNodeDao(BaseDao):
             return None
         return self._from_store(
             self._collection.find_one({WorkerNodeDao.ID: ObjectId(id_)})
+        )
+
+    def find_by_worker_id(self, worker_id):
+        return self._from_store(
+            self._collection.find_one({WorkerNodeDao.WORKER_ID: worker_id})
         )
 
     def find_by_hostname(self, hostname):
@@ -45,8 +46,10 @@ class WorkerNodeDao(BaseDao):
         )
 
     def update(self, obj):
+        document = self._to_store(obj)
+        del document[WorkerNodeDao.ID]
         return self._collection.update_one(
-            {WorkerNodeDao.ID: ObjectId(obj.id)}, {"$set": self._to_store(obj)}
+            {WorkerNodeDao.WORKER_ID: obj.worker_id}, {"$set": document}, upsert=True
         )
 
     def _from_store(self, obj):
@@ -54,6 +57,7 @@ class WorkerNodeDao(BaseDao):
             return None
         attrs = {
             "id_": obj.get(WorkerNodeDao.ID),
+            "worker_id": obj.get(WorkerNodeDao.WORKER_ID),
             "running_job_id": obj.get(WorkerNodeDao.RUNNING_JOB_ID),
             "last_seen": obj.get(WorkerNodeDao.LAST_SEEN),
             "hostname": obj.get(WorkerNodeDao.WORKER_HOSTNAME),
@@ -67,6 +71,7 @@ class WorkerNodeDao(BaseDao):
     def _to_store(self, obj):
         return {
             WorkerNodeDao.ID: ObjectId(obj.id) if obj.id else None,
+            WorkerNodeDao.WORKER_ID: obj.worker_id,
             WorkerNodeDao.RUNNING_JOB_ID: obj.running_job_id,
             WorkerNodeDao.LAST_SEEN: obj.last_seen,
             WorkerNodeDao.WORKER_HOSTNAME: obj.hostname,

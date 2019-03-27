@@ -17,32 +17,43 @@ logger = logging.getLogger("worker")
 class WorkerRegisterHandler(BaseAPIHandler):
     @authenticate_cluster_token
     @schema.validate(
+        on_empty_404=True,
+        input_schema={
+            "type": "object",
+            "properties": {"hostname": {"type": "string"}},
+            "required": ["hostname"],
+            "additionalProperties": False,
+        },
         output_schema={
             "type": "object",
-            "properties": {
-                "worker_id": {"type": "string"},
-                "heartbeat": {"type": "number"},
-            },
-            "required": ["worker_id"],
+            "properties": {"heartbeat": {"type": "number"}},
+            "required": ["heartbeat"],
             "additionalProperties": False,
-        }
+        },
     )
-    def get(self, *args, **kwargs):
-        worker_node_dao = daos.WorkerNodeDao(self.settings)
-        worker_node = models.WorkerNode(
-            hostname=kwargs.get("hostname") if len(args) == 0 else args[0],
-            last_seen=get_time(),
-            is_alive=True,
-        )
-        worker_id = str(worker_node_dao.insert(worker_node).inserted_id)
+    def post(self, *args, **kwargs):
+        worker_id = kwargs.get("worker_id")
+        hostname = self.body.get("hostname")
 
-        logger.info(
-            "worker '{}' joined as id '{}'".format(worker_node.hostname, worker_id)
+        worker_node_dao = daos.WorkerNodeDao(self.settings)
+
+        dup = worker_node_dao.find_by_worker_id(worker_id)
+
+        if dup is not None and dup.is_alive:
+            msg = "worker id '{}' already exists".format(worker_id)
+            logger.critical(msg)
+            self.abort({"message": msg}, status=400)
+            return
+
+        worker_node = models.WorkerNode(
+            worker_id=worker_id, hostname=hostname, last_seen=get_time(), is_alive=True
         )
-        return {
-            "worker_id": worker_id,
-            "heartbeat": self.get_config()["HEARTBEAT_INTERVAL"],
-        }
+
+        worker_node_dao.update(worker_node)
+
+        logger.info("worker '{}' joined as id '{}'".format(hostname, worker_id))
+
+        return {"heartbeat": self.get_config()["HEARTBEAT_INTERVAL"]}
 
 
 class GradingJobHandler(BaseAPIHandler):
@@ -64,9 +75,9 @@ class GradingJobHandler(BaseAPIHandler):
         """
         Allows workers to request their next grading job
         """
-        worker_id = kwargs.get("worker_id") if len(args) == 0 else args[0]
+        worker_id = kwargs.get("worker_id")
         worker_node_dao = daos.WorkerNodeDao(self.settings)
-        worker_node = worker_node_dao.find_by_id(worker_id)
+        worker_node = worker_node_dao.find_by_worker_id(worker_id)
         if not worker_node:
             logger.critical(
                 "unknown node with ID '{}' successfully requested job".format(worker_id)
@@ -120,7 +131,7 @@ class GradingJobHandler(BaseAPIHandler):
         """
         Allows workers to update grading job status on completion
         """
-        worker_id = kwargs.get("worker_id") if len(args) == 0 else args[0]
+        worker_id = kwargs.get("worker_id")
         job_id = self.body.get("grading_job_id")
 
         grading_job_dao = daos.GradingJobDao(self.settings)
@@ -140,7 +151,7 @@ class GradingJobHandler(BaseAPIHandler):
             return
 
         worker_node_dao = daos.WorkerNodeDao(self.settings)
-        worker_node = worker_node_dao.find_by_id(worker_id)
+        worker_node = worker_node_dao.find_by_worker_id(worker_id)
         if not worker_node:
             logger.critical(
                 "unknown node with ID '{}' successfully updated job".format(worker_id)
@@ -173,10 +184,10 @@ class HeartBeatHandler(BaseAPIHandler):
     @authenticate_cluster_token
     @authenticate_worker
     def post(self, *args, **kwargs):
-        worker_id = kwargs.get("worker_id") if len(args) == 0 else args[0]
+        worker_id = kwargs.get("worker_id")
 
         worker_node_dao = daos.WorkerNodeDao(self.settings)
-        worker_node = worker_node_dao.find_by_id(worker_id)
+        worker_node = worker_node_dao.find_by_worker_id(worker_id)
         if not worker_node:
             logger.critical(
                 "unknown node with ID '{}' successfully sent heartbeat".format(

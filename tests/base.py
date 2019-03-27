@@ -1,5 +1,6 @@
 import json
 import jsonschema
+import uuid
 import unittest
 import sys
 
@@ -160,17 +161,19 @@ class ClientMixin(AsyncHTTPMixin):
 
 class GraderMixin(AsyncHTTPMixin):
     def register_worker(self, header, expected_code=200, hostname="mock_hostname"):
+        worker_id = str(uuid.uuid4())
+
         response = self.fetch(
-            self.get_url("/api/v1/worker/{}".format(hostname)),
-            method="GET",
+            self.get_url("/api/v1/worker/{}".format(worker_id)),
+            method="POST",
             headers=header,
+            body=json.dumps({"hostname": hostname}),
         )
+
         self.assertEqual(response.code, expected_code)
 
         if expected_code == 200:
-            response_body = json.loads(response.body.decode("utf-8"))
-            self.assertIn("worker_id", response_body["data"])
-            return response_body["data"].get("worker_id")
+            return worker_id
 
     def poll_job(self, worker_id, header):
         response = self.fetch(

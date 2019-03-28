@@ -224,7 +224,8 @@ class WorkerNodeDaoTest(BaseTest):
         self.dao = daos.WorkerNodeDao(self.app.settings)
 
     def _insert_obj(self):
-        return self.dao.update(WorkerNodeDaoTest.DEFAULT_OBJECT)
+        self.dao.update(WorkerNodeDaoTest.DEFAULT_OBJECT)
+        return WorkerNodeDaoTest.DEFAULT_OBJECT.worker_id
 
     def test_find_by_hostname(self):
         self._insert_obj()
@@ -232,16 +233,16 @@ class WorkerNodeDaoTest(BaseTest):
         self.assertIsNotNone(obj)
 
     def test_find_by_liveness(self):
-        result = self._insert_obj()
+        worker_id = self._insert_obj()
         obj_list = self.dao.find_by_liveness(alive=True)
         no_obj_list = self.dao.find_by_liveness(alive=False)
         self.assertEqual(len(obj_list), 1)
         self.assertEqual(len(no_obj_list), 0)
-        self.assertEqual(obj_list[0].id, str(result.inserted_id))
+        self.assertEqual(obj_list[0].worker_id, worker_id)
 
     def test_update(self):
-        insert_result = self._insert_obj()
-        obj = self.dao.find_by_id(insert_result.inserted_id)
+        worker_id = self._insert_obj()
+        obj = self.dao.find_by_worker_id(worker_id)
         obj.is_alive = False
         update_result = self.dao.update(obj)
 

@@ -63,7 +63,6 @@ def initialize_app():
         "QUEUE": Queue(),
     }
 
-    hex_regex = r"(?P<{}>[a-f0-9]+)"
     id_regex = r"(?P<{}>[-\w0-9]+)"
     string_regex = r"(?P<{}>[^()]+)"
 

@@ -39,11 +39,12 @@ def _handle_lost_worker_node(settings, worker):
             )
         )
         return
-    logger.critical(
-        "worker {} went offline unexpectedly on {} while executing '{}'".format(
-            worker.id, worker.hostname, lost_run_id
+    else:
+        logger.critical(
+            "worker {} went offline unexpectedly on {} while executing '{}'".format(
+                worker.id, worker.hostname, lost_run_id
+            )
         )
-    )
 
     jobs_dao = GradingJobDao(settings)
     job = jobs_dao.find_by_id(lost_run_id)

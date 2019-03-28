@@ -227,6 +227,10 @@ class WorkerNodeDaoTest(BaseTest):
         self.dao.insert(WorkerNodeDaoTest.DEFAULT_OBJECT)
         return WorkerNodeDaoTest.DEFAULT_OBJECT.id
 
+    def test_insert(self):
+        worker_id = self._insert_obj()
+        self.assertIsNotNone(worker_id)
+
     def test_find_by_hostname(self):
         self._insert_obj()
         obj = self.dao.find_by_hostname(WorkerNodeDaoTest.DEFAULT_OBJECT.hostname)

@@ -1,5 +1,3 @@
-from bson import ObjectId
-
 from broadway_api.daos.base import BaseDao
 from broadway_api.models import WorkerNode
 

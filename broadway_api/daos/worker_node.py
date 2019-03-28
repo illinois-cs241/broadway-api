@@ -33,9 +33,7 @@ class WorkerNodeDao(BaseDao):
         return list(map(self._from_store, self._collection.find()))
 
     def find_by_id(self, id):
-        return self._from_store(
-            self._collection.find_one({WorkerNodeDao.ID: id})
-        )
+        return self._from_store(self._collection.find_one({WorkerNodeDao.ID: id}))
 
     def find_by_hostname(self, hostname):
         return self._from_store(

@@ -37,21 +37,23 @@ class WorkerRegisterHandler(BaseAPIHandler):
 
         worker_node_dao = daos.WorkerNodeDao(self.settings)
 
-        dup = worker_node_dao.find_by_worker_id(worker_id)
-
-        if dup is not None and dup.is_alive:
-            msg = "worker id '{}' already exists".format(worker_id)
-            logger.critical(msg)
-            self.abort({"message": msg}, status=400)
-            return
-
         worker_node = models.WorkerNode(
-            worker_id=worker_id, hostname=hostname, last_seen=get_time(), is_alive=True
+            id_=worker_id, hostname=hostname, last_seen=get_time(), is_alive=True
         )
 
-        worker_node_dao.update(worker_node)
+        dup = worker_node_dao.find_by_id(worker_id)
 
-        logger.info("worker '{}' joined as id '{}'".format(hostname, worker_id))
+        if dup is None:
+            logger.info("new worker {} joined on {}".format(worker_id, hostname))
+            worker_node_dao.insert(worker_node)
+        elif not dup.is_alive:
+            logger.info("worker {} alive again on {}".format(worker_id, hostname))
+            worker_node_dao.update(worker_node)
+        else:
+            msg = "worker id '{}' already exists".format(worker_id)
+            logger.info(msg)
+            self.abort({"message": msg}, status=400)
+            return
 
         return {"heartbeat": self.get_config()["HEARTBEAT_INTERVAL"]}
 
@@ -77,7 +79,7 @@ class GradingJobHandler(BaseAPIHandler):
         """
         worker_id = kwargs.get("worker_id")
         worker_node_dao = daos.WorkerNodeDao(self.settings)
-        worker_node = worker_node_dao.find_by_worker_id(worker_id)
+        worker_node = worker_node_dao.find_by_id(worker_id)
         if not worker_node:
             logger.critical(
                 "unknown node with ID '{}' successfully requested job".format(worker_id)
@@ -151,7 +153,7 @@ class GradingJobHandler(BaseAPIHandler):
             return
 
         worker_node_dao = daos.WorkerNodeDao(self.settings)
-        worker_node = worker_node_dao.find_by_worker_id(worker_id)
+        worker_node = worker_node_dao.find_by_id(worker_id)
         if not worker_node:
             logger.critical(
                 "unknown node with ID '{}' successfully updated job".format(worker_id)
@@ -187,7 +189,7 @@ class HeartBeatHandler(BaseAPIHandler):
         worker_id = kwargs.get("worker_id")
 
         worker_node_dao = daos.WorkerNodeDao(self.settings)
-        worker_node = worker_node_dao.find_by_worker_id(worker_id)
+        worker_node = worker_node_dao.find_by_id(worker_id)
         if not worker_node:
             logger.critical(
                 "unknown node with ID '{}' successfully sent heartbeat".format(

@@ -20,7 +20,7 @@ def authenticate_worker(func):
 
         dao = WorkerNodeDao(handler.settings)
 
-        worker = dao.find_by_worker_id(worker_id)
+        worker = dao.find_by_id(worker_id)
 
         if worker is None:
             handler.abort({"message": "worker not found"}, status=401)

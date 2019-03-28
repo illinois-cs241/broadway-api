@@ -160,8 +160,10 @@ class ClientMixin(AsyncHTTPMixin):
 
 
 class GraderMixin(AsyncHTTPMixin):
-    def register_worker(self, header, expected_code=200, hostname="mock_hostname"):
-        worker_id = str(uuid.uuid4())
+    def register_worker(
+        self, header, expected_code=200, worker_id=None, hostname="mock_hostname"
+    ):
+        worker_id = worker_id or str(uuid.uuid4())
 
         response = self.fetch(
             self.get_url("/api/v1/worker/{}".format(worker_id)),

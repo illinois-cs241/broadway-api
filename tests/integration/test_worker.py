@@ -9,6 +9,11 @@ class RegisterGraderEndpointsTest(BaseTest):
     def test_register(self):
         self.assertIsNotNone(self.register_worker(self.get_header()))
 
+    def test_duplicate_token(self):
+        worker_id = "duplicate"
+        self.register_worker(self.get_header(), worker_id=worker_id, expected_code=200)
+        self.register_worker(self.get_header(), worker_id=worker_id, expected_code=400)
+
     def test_unauthorized(self):
         self.register_worker(None, 401)
 

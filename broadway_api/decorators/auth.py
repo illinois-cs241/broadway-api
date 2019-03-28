@@ -26,10 +26,6 @@ def authenticate_worker(func):
             handler.abort({"message": "worker not found"}, status=401)
             return
 
-        if not worker.is_alive:
-            handler.abort({"message": "node is not alive"}, status=401)
-            return
-
         return func(*args, **kwargs)
 
     return wrapper

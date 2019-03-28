@@ -23,13 +23,6 @@ class WorkerNodeDao(BaseDao):
     def find_all(self):
         return list(map(self._from_store, self._collection.find()))
 
-    def find_by_id(self, id_):
-        if not ObjectId.is_valid(id_):
-            return None
-        return self._from_store(
-            self._collection.find_one({WorkerNodeDao.ID: ObjectId(id_)})
-        )
-
     def find_by_worker_id(self, worker_id):
         return self._from_store(
             self._collection.find_one({WorkerNodeDao.WORKER_ID: worker_id})

@@ -18,7 +18,7 @@ class RegisterGraderEndpointsTest(BaseTest):
 
     def test_reregister_id(self):
         worker_id = self.register_worker(self.get_header(), expected_code=200)
-        time.sleep(HEARTBEAT_INTERVAL * 2)
+        time.sleep(HEARTBEAT_INTERVAL * 2 + 1)
         self.register_worker(self.get_header(), worker_id=worker_id, expected_code=200)
 
     def test_unauthorized(self):

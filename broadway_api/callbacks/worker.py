@@ -108,7 +108,8 @@ def _handle_lost_worker_node(settings, worker, reason="timeout"):
         return
     else:
         logger.critical(
-            "worker `{}` went offline unexpectedly on '{}' while executing '{}' due to {}".format(
+            "worker `{}` went offline unexpectedly on '{}' while"
+            " executing '{}' due to {}".format(
                 worker.id, worker.hostname, lost_run_id, reason
             )
         )

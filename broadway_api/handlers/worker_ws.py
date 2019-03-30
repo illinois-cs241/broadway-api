@@ -6,7 +6,6 @@ from broadway_api.handlers.base import BaseWSAPIHandler
 from broadway_api.decorators.auth import authenticate_cluster_token_ws
 
 import broadway_api.daos as daos
-import broadway_api.definitions as definitions
 import broadway_api.models as models
 
 from broadway_api.callbacks.job import job_update_callback

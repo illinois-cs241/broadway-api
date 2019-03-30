@@ -5,7 +5,7 @@ import os
 import uuid
 
 from broadway_api.definitions import course_config
-from broadway_api.daos import CourseDao
+from broadway_api.daos import CourseDao, WorkerNodeDao
 from broadway_api.models import Course
 
 logger = logging.getLogger("bootstrap")
@@ -41,3 +41,9 @@ def initialize_course_tokens(settings, course_config_path):
     for course_id, tokens in courses.items():
         course = Course(id_=course_id, tokens=tokens)
         course_dao.insert_or_update(course)
+
+
+def initialize_database(settings):
+    dao = WorkerNodeDao(settings)
+    logger.info("killing all ws nodes")
+    dao.kill_all_ws_nodes()

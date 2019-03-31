@@ -81,6 +81,16 @@ class HeartBeatEndpointsTest(BaseTest):
 
 class WorkerWSEndpointTest(BaseWSTest):
     @tornado.testing.gen_test
+    async def test_decode_error(self):
+        async with self.worker_ws_conn(
+            worker_id="test_worker", headers=self.get_header()
+        ) as conn:
+            try:
+                await conn.send("i'm not json")
+            except Exception as e:
+                self.assertEqual(e.code, 1011)
+
+    @tornado.testing.gen_test
     async def test_register(self):
         async with self.worker_ws_conn(
             worker_id="test_worker", headers=self.get_header()

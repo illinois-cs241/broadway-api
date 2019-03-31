@@ -26,7 +26,7 @@ class BaseAPIHandler(APIHandler):
         return self.settings.get("QUEUE")
 
 
-class BaseWSAPIHandler(WebSocketHandler):
+class BaseWSAPIHandler(BaseAPIHandler, WebSocketHandler):
     msg_type_map = {}
 
     @staticmethod
@@ -62,15 +62,6 @@ class BaseWSAPIHandler(WebSocketHandler):
 
     def send(self, data):
         self.write_message(json.dumps(data))
-
-    def get_config(self):
-        return self.settings.get("CONFIG")
-
-    def get_token(self):
-        return self.settings.get("CLUSTER_TOKEN")
-
-    def get_queue(self):
-        return self.settings.get("QUEUE")
 
     def get_ws_conn_map(self):
         return self.settings.get("WS_CONN_MAP")

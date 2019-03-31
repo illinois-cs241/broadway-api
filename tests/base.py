@@ -59,7 +59,8 @@ class AsyncHTTPMixin(AsyncHTTPTestCase):
 
     def get_header(self, override=None):
         return {
-            "Authorization": "Bearer " + self.get_token() if not override else override
+            "Authorization": "Bearer "
+            + (self.get_token() if not override else override)
         }
 
     def tearDown(self):

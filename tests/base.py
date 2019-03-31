@@ -3,6 +3,9 @@ import jsonschema
 import uuid
 import unittest
 import sys
+from functools import partial
+
+import websockets
 
 from tornado.testing import AsyncHTTPTestCase
 import tornado.ioloop
@@ -271,4 +274,17 @@ class EqualityMixin(unittest.TestCase):
 
 
 class BaseTest(EqualityMixin, ClientMixin, GraderMixin):
+    pass
+
+
+class WorkerWSMixin(AsyncHTTPMixin):
+    def get_protocol(self):
+        return "ws"
+
+    def worker_ws_conn(self, worker_id, headers):
+        url = self.get_url("/api/v1/worker_ws/{}".format(worker_id))
+        return websockets.connect(url, extra_headers=headers)
+
+
+class BaseWSTest(WorkerWSMixin):
     pass

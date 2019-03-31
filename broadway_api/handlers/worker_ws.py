@@ -36,6 +36,9 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
         },
     )
     def handler_register(self, hostname):
+        if self.worker_id is None:
+            return
+
         worker_node_dao = daos.WorkerNodeDao(self.settings)
 
         self.worker_node = models.WorkerNode(
@@ -61,11 +64,14 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
         else:
             msg = "worker id `{}` already exists".format(self.worker_id)
             logger.info(msg)
+            self.send({"success": False})
             self.close(reason=msg, code=1002)
             return
 
         self.registered = True
         self.get_ws_conn_map()[self.worker_id] = self
+
+        self.send({"success": True})
 
         # trigger schedule event
         tornado.ioloop.IOLoop.current().add_callback(worker_schedule_job, self.settings)
@@ -85,8 +91,12 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
         },
     )
     def handler_job_result(self, grading_job_id, success, results, logs):
+        if not self.registered:
+            return
+
         grading_job_dao = daos.GradingJobDao(self.settings)
         job = grading_job_dao.find_by_id(grading_job_id)
+
         if not job:
             self.close(reason="job with the given ID not found", code=1002)
             return
@@ -143,3 +153,7 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
             )
 
             del self.get_ws_conn_map()[self.worker_id]
+        else:
+            logger.info(
+                "worker `{}` went down before registering".format(self.worker_id)
+            )

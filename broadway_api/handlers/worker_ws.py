@@ -92,6 +92,10 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
     )
     def handler_job_result(self, grading_job_id, success, results, logs):
         if not self.registered:
+            logger.info(
+                "worker `{}` submitted before registering".format(self.worker_id)
+            )
+            self.close(reason="submitting before registering", code=1002)
             return
 
         grading_job_dao = daos.GradingJobDao(self.settings)

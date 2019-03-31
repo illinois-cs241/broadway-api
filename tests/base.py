@@ -277,18 +277,40 @@ class EqualityMixin(unittest.TestCase):
                 self.assertEqual(actual_stage.get(stage_key), expected_stage[stage_key])
 
 
-class BaseTest(EqualityMixin, ClientMixin, GraderMixin):
-    pass
-
-
 class WorkerWSMixin(AsyncHTTPMixin):
-    def get_protocol(self):
-        return "ws"
-
+    # lower level conn
     def worker_ws_conn(self, worker_id, headers):
-        url = self.get_url("/api/v1/worker_ws/{}".format(worker_id))
+        url = self.get_url("/api/v1/worker_ws/{}".format(worker_id)).replace(
+            "http://", "ws://"
+        )
         return websockets.connect(url, extra_headers=headers)
 
+    def worker_ws_conn_register(self, conn, hostname):
+        return conn.send(
+            json.dumps({"type": "register", "args": {"hostname": hostname}})
+        )
 
-class BaseWSTest(WorkerWSMixin):
+    def worker_ws_conn_reulst(self, conn, job_id, job_success):
+        args = {
+            "grading_job_id": job_id,
+            "success": job_success,
+            "results": [{"res": "container 1 res"}, {"res": "container 2 res"}],
+            "logs": {"stdout": "stdout", "stderr": "stderr"},
+        }
+
+        return conn.send(json.dumps({"type": "job_result", "args": args}))
+
+    # need to be closed
+    async def worker_ws(self, worker_id, headers, hostname="eniac"):
+        conn = await self.worker_ws_conn(worker_id="test_worker", headers=headers)
+
+        await self.worker_ws_conn_register(conn, hostname)
+
+        ack = json.loads(await conn.recv())
+        self.assertTrue(ack["success"])
+
+        return conn
+
+
+class BaseTest(WorkerWSMixin, EqualityMixin, ClientMixin, GraderMixin):
     pass

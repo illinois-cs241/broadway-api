@@ -1,10 +1,12 @@
 import logging
+import json
 
 from broadway_api.models import GradingRunState, GradingJobState
 
 import tests._fixtures.grading_configs as grading_configs
 import tests._fixtures.grading_runs as grading_runs
 from tests.base import BaseTest
+from tests._utils.asyncio import to_sync
 
 logging.disable(logging.WARNING)
 
@@ -874,3 +876,83 @@ class EndpointIntegrationTest(BaseTest):
             GradingRunState.FAILED.value,
         )
         self.assertEqual(self.poll_job(worker_id, self.get_header()), 498)
+
+
+class WSEndpointIntegrationTest(BaseTest):
+    def test_single_student_job_ws(self):
+        self.upload_grading_config(
+            self.course1,
+            "assignment1",
+            self.client_header1,
+            grading_configs.only_student_config,
+            200,
+        )
+
+        grading_run_id = self.start_grading_run(
+            self.course1,
+            "assignment1",
+            self.client_header1,
+            grading_runs.one_student_job,
+            200,
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_id,
+            self.client_header1,
+            200,
+            GradingRunState.STUDENTS_STAGE.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_id, self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.QUEUED.value,
+        )
+
+        conn = to_sync(self.worker_ws("test_worker", self.get_header()))
+
+        student_job = json.loads(to_sync(conn.recv()))
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_id,
+            self.client_header1,
+            200,
+            GradingRunState.STUDENTS_STAGE.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_id, self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.STARTED.value,
+        )
+
+        to_sync(
+            self.worker_ws_conn_reulst(conn, student_job.get("grading_job_id"), True)
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_id,
+            self.client_header1,
+            200,
+            GradingRunState.FINISHED.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_id, self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.SUCCEEDED.value,
+        )
+
+        to_sync(conn.close())

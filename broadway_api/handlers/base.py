@@ -51,10 +51,7 @@ class BaseWSAPIHandler(BaseAPIHandler, WebSocketHandler):
             # check argument decl
             validate(instance=data["args"], schema=decl)
 
-            if data["args"] is not None:
-                return handler(self, **data["args"])
-            else:
-                return handler(self)
+            return handler(self, **data["args"])
 
         except Exception as e:
             self.close(code=1011, reason="internal error")

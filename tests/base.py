@@ -11,7 +11,7 @@ import tornado.ioloop
 
 import broadway_api.definitions as definitions
 import broadway_api.callbacks as callbacks
-from broadway_api.utils.boostrap import initialize_database
+from broadway_api.utils.bootstrap import initialize_database
 
 import tests._fixtures.config as test_config
 import tests._utils.database as database_utils

@@ -93,8 +93,23 @@ class WorkerWSEndpointTest(BaseWSTest):
             self.assertTrue(ack["success"])
 
     @tornado.testing.gen_test
-    async def test_illegal_token(self):
+    async def test_no_token(self):
         async with self.worker_ws_conn(worker_id="test_worker", headers=None) as conn:
+            try:
+                await conn.send(
+                    json.dumps({"type": "register", "args": {"hostname": "eniac"}})
+                )
+
+                ack = json.loads(await conn.recv())
+                self.assertFalse(ack["success"])
+            except websockets.exceptions.ConnectionClosed as e:
+                self.assertEqual(e.code, 1008)
+
+    @tornado.testing.gen_test
+    async def test_wrong_token(self):
+        async with self.worker_ws_conn(
+            worker_id="test_worker", headers=self.get_header("invalid")
+        ) as conn:
             try:
                 await conn.send(
                     json.dumps({"type": "register", "args": {"hostname": "eniac"}})

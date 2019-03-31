@@ -3,7 +3,6 @@ import jsonschema
 import uuid
 import unittest
 import sys
-from functools import partial
 
 import websockets
 
@@ -12,6 +11,8 @@ import tornado.ioloop
 
 import broadway_api.definitions as definitions
 import broadway_api.callbacks as callbacks
+from broadway_api.utils.boostrap import initialize_database
+
 import tests._fixtures.config as test_config
 import tests._utils.database as database_utils
 
@@ -43,6 +44,8 @@ class AsyncHTTPMixin(AsyncHTTPTestCase):
                 MOCK_COURSE2: [MOCK_CLIENT_TOKEN1, MOCK_CLIENT_TOKEN2],
             },
         )
+
+        initialize_database(self.app.settings)
 
         tornado.ioloop.PeriodicCallback(
             lambda: callbacks.worker_heartbeat_callback(self.app.settings),

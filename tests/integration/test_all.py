@@ -879,6 +879,7 @@ class EndpointIntegrationTest(BaseTest):
 
 
 class WSEndpointIntegrationTest(BaseTest):
+    # basic sanity check
     def test_single_student_job_ws(self):
         self.upload_grading_config(
             self.course1,
@@ -948,6 +949,241 @@ class WSEndpointIntegrationTest(BaseTest):
 
         run_state = self.get_grading_run_state(
             self.course1, grading_run_id, self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.SUCCEEDED.value,
+        )
+
+        to_sync(conn.close())
+
+    # one ws worker vs two jobs
+    def test_one_worker_two_jobs(self):
+        self.upload_grading_config(
+            self.course1,
+            "assignment1",
+            self.client_header1,
+            grading_configs.only_student_config,
+            200,
+        )
+
+        grading_run_ids = [
+            self.start_grading_run(
+                self.course1,
+                "assignment1",
+                self.client_header1,
+                grading_runs.one_student_job,
+                200,
+            )
+            for _ in range(2)
+        ]
+
+        conn = to_sync(self.worker_ws("test_worker", self.get_header()))
+
+        student_job = json.loads(to_sync(conn.recv()))
+
+        to_sync(
+            self.worker_ws_conn_reulst(conn, student_job.get("grading_job_id"), False)
+        )
+
+        student_job = json.loads(to_sync(conn.recv()))
+
+        to_sync(
+            self.worker_ws_conn_reulst(conn, student_job.get("grading_job_id"), True)
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_ids[0],
+            self.client_header1,
+            200,
+            GradingRunState.FINISHED.value,
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_ids[1],
+            self.client_header1,
+            200,
+            GradingRunState.FINISHED.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_ids[0], self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.FAILED.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_ids[1], self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.SUCCEEDED.value,
+        )
+
+        to_sync(conn.close())
+
+    # each worker should get one job only
+    def test_two_workers_two_jobs(self):
+        self.upload_grading_config(
+            self.course1,
+            "assignment1",
+            self.client_header1,
+            grading_configs.only_student_config,
+            200,
+        )
+
+        grading_run_ids = [
+            self.start_grading_run(
+                self.course1,
+                "assignment1",
+                self.client_header1,
+                grading_runs.one_student_job,
+                200,
+            )
+            for _ in range(2)
+        ]
+
+        conn1 = to_sync(self.worker_ws("test_worker1", self.get_header()))
+        conn2 = to_sync(self.worker_ws("test_worker2", self.get_header()))
+
+        student_job = json.loads(to_sync(conn1.recv()))
+
+        to_sync(
+            self.worker_ws_conn_reulst(conn1, student_job.get("grading_job_id"), True)
+        )
+
+        student_job = json.loads(to_sync(conn2.recv()))
+
+        to_sync(
+            self.worker_ws_conn_reulst(conn2, student_job.get("grading_job_id"), True)
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_ids[0],
+            self.client_header1,
+            200,
+            GradingRunState.FINISHED.value,
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_ids[1],
+            self.client_header1,
+            200,
+            GradingRunState.FINISHED.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_ids[0], self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.SUCCEEDED.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_ids[1], self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.SUCCEEDED.value,
+        )
+
+        to_sync(conn1.close())
+        to_sync(conn2.close())
+
+    # both ws worker and normal worker
+    # the first job should be actively pushed to the ws worker
+    # and the second job should be queued until the normal worker
+    # pulls it.
+    def test_mix_worker_type(self):
+        self.upload_grading_config(
+            self.course1,
+            "assignment1",
+            self.client_header1,
+            grading_configs.only_student_config,
+            200,
+        )
+
+        # two grading jobs: the first one should be assigned to ws worker
+        grading_run_ids = [
+            self.start_grading_run(
+                self.course1,
+                "assignment1",
+                self.client_header1,
+                grading_runs.one_student_job,
+                200,
+            )
+            for _ in range(2)
+        ]
+
+        conn = to_sync(self.worker_ws("test_worker", self.get_header()))
+        worker_id = self.register_worker(self.get_header())
+
+        student_job_1 = json.loads(to_sync(conn.recv()))
+        student_job_2 = self.poll_job(worker_id, self.get_header())
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_ids[0],
+            self.client_header1,
+            200,
+            GradingRunState.STUDENTS_STAGE.value,
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_ids[1],
+            self.client_header1,
+            200,
+            GradingRunState.STUDENTS_STAGE.value,
+        )
+
+        to_sync(
+            self.worker_ws_conn_reulst(conn, student_job_1.get("grading_job_id"), False)
+        )
+
+        self.post_job_result(
+            worker_id, self.get_header(), student_job_2.get("grading_job_id"), True
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_ids[0],
+            self.client_header1,
+            200,
+            GradingRunState.FINISHED.value,
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_ids[1],
+            self.client_header1,
+            200,
+            GradingRunState.FINISHED.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_ids[0], self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.FAILED.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_ids[1], self.client_header1
         )
 
         self.assertEqual(

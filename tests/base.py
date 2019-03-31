@@ -302,7 +302,7 @@ class WorkerWSMixin(AsyncHTTPMixin):
 
     # need to be closed
     async def worker_ws(self, worker_id, headers, hostname="eniac"):
-        conn = await self.worker_ws_conn(worker_id="test_worker", headers=headers)
+        conn = await self.worker_ws_conn(worker_id=worker_id, headers=headers)
 
         await self.worker_ws_conn_register(conn, hostname)
 

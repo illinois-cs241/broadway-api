@@ -46,8 +46,6 @@ def worker_schedule_job(settings):
     conn_map = settings["WS_CONN_MAP"]
     job_queue = settings["QUEUE"]
 
-    # logger.info("connection map: {}".format(conn_map))
-
     grading_job_dao = GradingJobDao(settings)
     worker_node_dao = WorkerNodeDao(settings)
 

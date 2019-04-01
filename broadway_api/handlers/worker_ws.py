@@ -127,6 +127,12 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
             self.close(reason=msg, code=1002)
             return
 
+        logger.info(
+            "worker `{}` submitted job result for job '{}'".format(
+                self.worker_id, grading_job_id
+            )
+        )
+
         # clear the worker node's job
         worker_node.running_job_id = None
         worker_node_dao.update(worker_node)

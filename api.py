@@ -21,6 +21,7 @@ from broadway_api.utils.bootstrap import (
 
 from logging.handlers import TimedRotatingFileHandler
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 from queue import Queue
 
 import config
@@ -56,12 +57,25 @@ def parse_args():
     return parser.parse_args()
 
 
+def initialize_db_conn():
+    uri = "mongodb://{}:{}".format(config.DB_HOST, config.DB_PORT)
+
+    try:
+        db_client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+        db_client.server_info()
+    except ConnectionFailure as e:
+        logger.critical("failed to connect to mongo server: {}".format(repr(e)))
+        sys.exit(1)
+
+    return MongoClient(uri)
+
+
 def initialize_app():
     config_keys = filter(lambda x: not x.startswith("_"), config.__dict__)
     settings = {
         "CLUSTER_TOKEN": initialize_cluster_token(),
         "CONFIG": dict((k, config.__dict__[k]) for k in config_keys),
-        "DB": MongoClient(),
+        "DB": initialize_db_conn(),
         "QUEUE": Queue(),
         "WS_CONN_MAP": {},
     }

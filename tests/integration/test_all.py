@@ -958,6 +958,80 @@ class WSEndpointIntegrationTest(BaseTest):
 
         to_sync(conn.close())
 
+    def test_worker_fail_midway(self):
+        self.upload_grading_config(
+            self.course1,
+            "assignment1",
+            self.client_header1,
+            grading_configs.only_student_config,
+            200,
+        )
+
+        grading_run_id = self.start_grading_run(
+            self.course1,
+            "assignment1",
+            self.client_header1,
+            grading_runs.one_student_job,
+            200,
+        )
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_id,
+            self.client_header1,
+            200,
+            GradingRunState.STUDENTS_STAGE.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_id, self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.QUEUED.value,
+        )
+
+        conn = to_sync(self.worker_ws("test_worker", self.get_header()))
+
+        to_sync(conn.recv())
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_id,
+            self.client_header1,
+            200,
+            GradingRunState.STUDENTS_STAGE.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_id, self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.STARTED.value,
+        )
+
+        to_sync(conn.close())
+
+        self.check_grading_run_status(
+            self.course1,
+            grading_run_id,
+            self.client_header1,
+            200,
+            GradingRunState.FINISHED.value,
+        )
+
+        run_state = self.get_grading_run_state(
+            self.course1, grading_run_id, self.client_header1
+        )
+
+        self.assertEqual(
+            get_first_status(run_state["student_jobs_state"]),
+            GradingJobState.STARTED.value,
+        )
+
     # one ws worker vs two jobs
     def test_one_worker_two_jobs(self):
         self.upload_grading_config(

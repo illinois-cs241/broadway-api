@@ -2,11 +2,17 @@ import json
 import jsonschema
 import logging
 import os
+import sys
 import uuid
+
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 
 from broadway_api.definitions import course_config
 from broadway_api.daos import CourseDao, WorkerNodeDao
 from broadway_api.models import Course
+
+import config
 
 logger = logging.getLogger("bootstrap")
 
@@ -44,6 +50,17 @@ def initialize_course_tokens(settings, course_config_path):
 
 
 def initialize_database(settings):
+    uri = "mongodb://{}:{}".format(config.DB_HOST, config.DB_PORT)
+
+    try:
+        db_client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+        db_client.server_info()
+    except ConnectionFailure as e:
+        logger.critical("failed to connect to mongo server: {}".format(repr(e)))
+        sys.exit(1)
+
+    settings["DB"] = MongoClient(uri)
+
     dao = WorkerNodeDao(settings)
     logger.info("killing all ws nodes")
     dao.kill_all_ws_nodes()

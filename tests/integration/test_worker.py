@@ -128,6 +128,20 @@ class WorkerWSEndpointTest(BaseTest):
             self.assertTrue(ack["success"])
 
     @tornado.testing.gen_test
+    async def test_timeout(self):
+        async with self.worker_ws_conn(
+            worker_id="test_worker", headers=self.get_header()
+        ) as conn:
+            await conn.send(
+                json.dumps({"type": "register", "args": {"hostname": "eniac"}})
+            )
+
+            ack = json.loads(await conn.recv())
+            self.assertTrue(ack["success"])
+
+            time.sleep(HEARTBEAT_INTERVAL * 2 + 1)
+
+    @tornado.testing.gen_test
     async def test_no_token(self):
         async with self.worker_ws_conn(worker_id="test_worker", headers=None) as conn:
             try:

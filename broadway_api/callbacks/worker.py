@@ -18,13 +18,23 @@ def worker_heartbeat_callback(settings):
     """
     heartbeat_timestamp = get_time()
     heartbeat_interval = settings["CONFIG"]["HEARTBEAT_INTERVAL"]
+    conn_map = settings["WS_CONN_MAP"]
 
     dao = WorkerNodeDao(settings)
-    for node in dao.find_by_liveness(alive=True, use_ws=False):
+
+    for node in dao.find_by_liveness(alive=True):
         if (
             heartbeat_timestamp - node.last_seen
         ).total_seconds() >= 2 * heartbeat_interval:
+            if node.use_ws and node.id in conn_map:
+                conn_map[node.id].close()
+
             _handle_lost_worker_node(settings, node)
+
+        elif node.use_ws and node.id in conn_map:
+            # send ping messages to all connections
+            # excepting pong response before the next checking point
+            conn_map[node.id].ping()
 
 
 def worker_lost_callback(settings, worker_id, reason="closed connection"):

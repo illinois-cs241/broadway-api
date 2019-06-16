@@ -167,3 +167,25 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
             logger.info(
                 "worker `{}` went down before registering".format(self.worker_id)
             )
+
+    def on_pong(self, data):
+        # ping messages have the same function as heartbeat requests
+        # for normal http workers
+
+        if self.worker_id is None:
+            logger.critical("worker is not initialized")
+            return
+
+        worker_node_dao = daos.WorkerNodeDao(self.settings)
+        worker_node = worker_node_dao.find_by_id(self.worker_id)
+
+        if not worker_node:
+            logger.critical(
+                "unknown ws node with ID '{}' successfully sent heartbeat".format(
+                    self.worker_id
+                )
+            )
+            return
+
+        worker_node.last_seen = get_time()
+        worker_node_dao.update(worker_node)

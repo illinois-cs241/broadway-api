@@ -62,5 +62,5 @@ def initialize_database(settings):
     settings["DB"] = MongoClient(uri)
 
     dao = WorkerNodeDao(settings)
-    logger.info("killing all ws nodes")
-    dao.kill_all_ws_nodes()
+    logger.info("resetting ws worker nodes")
+    dao.reset_worker_nodes()

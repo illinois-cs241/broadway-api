@@ -47,7 +47,7 @@ class WorkerNodeDao(BaseDao):
 
         return list(map(self._from_store, self._collection.find(pattern)))
 
-    def kill_all_ws_nodes(self):
+    def reset_worker_nodes(self):
         return self._collection.update_many(
             {WorkerNodeDao.USE_WS: True}, {"$set": {WorkerNodeDao.ALIVE: False}}
         )

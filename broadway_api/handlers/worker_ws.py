@@ -24,7 +24,7 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
     def open(self, worker_id):
         self.worker_id = worker_id
         self.registered = False
-        logger.info("worker `{}` opened a connection".format(self.worker_id))
+        logger.info("worker '{}' opened a connection".format(self.worker_id))
 
     @BaseWSAPIHandler.msg_type(
         "register",
@@ -53,16 +53,16 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
 
         if dup is None:
             logger.info(
-                "new worker `{}` joined on '{}'".format(self.worker_id, hostname)
+                "new worker '{}' joined on '{}'".format(self.worker_id, hostname)
             )
             worker_node_dao.insert(self.worker_node)
         elif not dup.is_alive:
             logger.info(
-                "worker `{}` alive again on '{}'".format(self.worker_id, hostname)
+                "worker '{}' alive again on '{}'".format(self.worker_id, hostname)
             )
             worker_node_dao.update(self.worker_node)
         else:
-            msg = "worker id `{}` already exists".format(self.worker_id)
+            msg = "worker id '{}' already exists".format(self.worker_id)
             logger.info(msg)
             self.send({"success": False})
             self.close(reason=msg, code=1002)
@@ -93,7 +93,7 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
     def handler_job_result(self, grading_job_id, success, results, logs):
         if not self.registered:
             logger.info(
-                "worker `{}` submitted before registering".format(self.worker_id)
+                "worker '{}' submitted before registering".format(self.worker_id)
             )
             self.close(reason="submitting before registering", code=1002)
             return
@@ -122,13 +122,13 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
         worker_node = worker_node_dao.find_by_id(self.worker_id)
 
         if not worker_node:
-            msg = "unknown worker `{}` successfully updated job".format(self.worker_id)
+            msg = "unknown worker '{}' successfully updated job".format(self.worker_id)
             logger.critical(msg)
             self.close(reason=msg, code=1002)
             return
 
         logger.info(
-            "worker `{}` submitted job result for job '{}'".format(
+            "worker '{}' submitted job result for job '{}'".format(
                 self.worker_id, grading_job_id
             )
         )
@@ -165,7 +165,7 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
             del self.get_ws_conn_map()[self.worker_id]
         else:
             logger.info(
-                "worker `{}` went down before registering".format(self.worker_id)
+                "worker '{}' went down before registering".format(self.worker_id)
             )
 
     def on_pong(self, data):

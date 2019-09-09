@@ -171,6 +171,7 @@ class WorkerConnectionHandler(BaseWSAPIHandler):
     def on_pong(self, data):
         # ping messages have the same function as heartbeat requests
         # for normal http workers
+        print("pong!! {}".format(data))
 
         if self.worker_id is None:
             logger.critical("worker is not initialized")

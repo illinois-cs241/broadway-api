@@ -2,10 +2,10 @@ import json
 import requests
 import sys
 
-PROTOCOL = "https"
-HOST = ""
-COURSE = ""
-ASSIGNMENT = ""
+PROTOCOL = "http"
+HOST = "127.0.0.1:1470"
+COURSE = "malloc"
+ASSIGNMENT = "malloc"
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:

@@ -1,0 +1,8 @@
+{
+    "student_pipeline": [
+        {
+            "image": "alpine:3.5",
+            "entrypoint": [ "sleep", "30" ]
+        }
+    ]
+}
